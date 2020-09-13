@@ -2,36 +2,28 @@
 
 ![sandbox](images/sandbox.jpg)
 
-This repository is a collection of PowerShell tools and scripts that I use to run and configure the Windows Sandbox feature that is part of Windows 10 2004. Many of the commands in this repository were first demonstrated on my [blog](https://jdhitsolutions.com/blog/powershell/7621/doing-more-with-windows-sandbox/). I strongly recommend you read the blog post before trying any of the code. As I mention in the blog post, most of the code here will __reduce the security__ of the Windows Sandbox application. This is a trade-off I am willing to make for the sake of functionality that meets *my* requirements. You have to decide how much of the code you would like to use.
+Questo repository è una raccolta di strumenti e script di PowerShell che utilizzo per eseguire e configurare la funzionalità Sandbox di Windows che fa parte di Windows 10 2004. Molti dei comandi in questo repository sono stati dimostrati per la prima volta sul mio blog . Ti consiglio vivamente di leggere il post del blog prima di provare qualsiasi codice. Come ho detto nel post del blog, la maggior parte del codice qui ridurrà la sicurezza dell'applicazione Windows Sandbox. Questo è un compromesso che sono disposto a fare per il bene della funzionalità che soddisfa le mie esigenze. Devi decidere quanto codice desideri utilizzare.
 
-__*All code is offered as-is with no guarantees. Nothing in this repository should be considered production-ready or used in critical environments.*__
+Tutto il codice viene offerto così com'è senza garanzie. Niente in questo repository deve essere considerato pronto per la produzione o utilizzato in ambienti critici.
 
-## Installing the Windows Sandbox
+Installazione della sandbox di Windows
+Devi avere la versione 2004 di Windows 10. Non so se è supportata su Windows 10 Home. Altrimenti, dovresti essere in grado di eseguire questi comandi di PowerShell:
 
-You need to have the 2004 version of Windows 10. I don't know off-hand if it is supported on Windows 10 Home. Otherwise, you should then be able to run these PowerShell commands:
+Get-WindowsOptionalFeature  - online - FeatureName Containers - DisposableClientVM
+ Enable-WindowsOptionalFeature  - Online - FeatureName Containers - DisposableClientVM
+I miei strumenti
+Il completamento dello script di configurazione predefinito richiede circa 4 minuti. Uso il modulo BurntToast per mostrare una notifica del Centro operativo di Windows quando è completo. Questo progetto non è un modulo di PowerShell o un set di file che puoi eseguire così com'è. Puoi clonare, scaricare o copiare se necessario.
 
-```powershell
-Get-WindowsOptionalFeature -online -FeatureName Containers-DisposableClientVM
-Enable-WindowsOptionalFeature -Online -FeatureName Containers-DisposableClientVM
-```
+Start-WindowsSandbox
+La Start-WindowsSandboxfunzione è il mio strumento principale. Ha un alias di wsb. È possibile specificare il percorso del file WSB.
 
-## My Tools
+Start-WindowsSandbox
 
-My default [configuration script](sandbox-config.ps1) takes about 4 minutes to complete. I use the [BurntToast](https://github.com/Windos/BurntToast) module to show a Windows Action Center notification when it is complete. This project is not a PowerShell module or set of files you can run as-is. You are welcome to clone, download or copy as needed.
+Se utilizzi il NoSetupparametro, verrà avviato il Sandbox di Windows predefinito. In entrambi gli utilizzi, è possibile specificare le dimensioni di visualizzazione per la sandbox. Il WindowSizeparametro prevede un array di larghezza e altezza, come 1024,768. Il mio valore predefinito è 1920,1080. Potrebbe essere necessario trascinare leggermente la finestra per forzare la sandbox a ridisegnare lo schermo e rimuovere la barra di scorrimento orizzontale. L'impostazione del display è complicata e non so se quello che sto usando funzionerà per tutti, quindi se non ottieni i risultati che ti aspetti, pubblica un problema.
 
-### Start-WindowsSandbox
+Funzioni WSB
+Ho creato un semplice modulo chiamato wsbFunctions.psm1. In questo modulo sono presenti funzioni progettate per rendere più semplice visualizzare una configurazione WSB, creare una nuova configurazione ed esportare una configurazione in un file. Le funzioni utilizzano una serie di definizioni di classe.
 
-The `Start-WindowsSandbox` function is my primary tool. It has an alias of `wsb`. You can specify the path to the wsb file.
-
-![Start-WindowsSandbox](images/start-windowssandbox.png)
-
-If you use the `NoSetup` parameter, it will launch the default Windows Sandbox. In either usage, you can specify display dimensions for the sandbox. The `WindowSize` parameter expects an array of width and height, like 1024,768. My default is 1920,1080. You may have to drag the window slightly to force the sandbox to redraw the screen and remove the horizontal scrollbar. Setting the display is tricky and I don't know if what I am using will work for everyone so if you don't get the results you expect, post an issue.
-
-### Wsb Functions
-
-I have created a simple module called `wsbFunctions.psm1`. In this module are functions designed to make it easier to view a wsb configuration, create a new configuration and export a configuration to a file. The functions use a number of class definitions.
-
-```text
 PS C:\> Get-WsbConfiguration d:\wsb\simple.wsb
 WARNING: No value detected for LogonCommand. This may be intentional on your part.
 
@@ -48,36 +40,27 @@ Networking           : Default
 ProtectedClient      : Default
 LogonCommand         :
 MappedFolders        : C:\scripts -> C:\scripts [RO:False]
-```
+Il comando utilizza un file di formato personalizzato per visualizzare la configurazione. Ho anche trovato un modo per inserire metadati nel file WSB che (finora) non interferisce con l'applicazione Sandbox di Windows.
 
-The command uses a custom format file to display the configuration. I have also found a way to insert metadata into the wsb file which (so far) doesn't interfere with the Windows Sandbox application.
-
-```text
 PS C:\> Get-WsbConfiguration d:\wsb\simple.wsb -MetadataOnly
 
 Author     Name   Description                                       Updated
 ------     ----   -----------                                       -------
 Jeff Hicks Simple a simple configuration with mapping to C:\Scripts 9/10/2020 4:47:10 AM
-```
+Se lo desideri, puoi creare una nuova configurazione.
 
-If you wanted, you could create a new configuration.
-
-```powershell
-$params = @{
- Networking = "Default"
- LogonCommand = "c:\data\demo.cmd"
- MemoryInMB = 2048
- PrinterRedirection = "Disable"
- MappedFolder = (New-WsbMappedFolder -HostFolder d:\data -SandboxFolder c:\data -ReadOnly True)
- Name = "MyDemo"
- Description = "A demo WSB configuration"
+$ params  =  @ {
+  Networking  =  " Default "
+  LogonCommand  =  " c: \ data \ demo.cmd "
+  MemoryInMB  =  2048 
+ PrinterRedirection  =  " Disable "
+  MappedFolder  = ( New-WsbMappedFolder  - HostFolder d: \ data  - SandboxFolder c: \ data  - ReadOnly True)
+  Name  =  " MyDemo "
+  Description  =  " Una configurazione WSB demo "
 }
-$new = New-WsbConfiguration  @params
-```
+$ new  =  New-WsbConfiguration   @params
+Il LogonCommandvalore è relativo a WindowsSandbox. Questo codice creerà un wsbConfigurationoggetto.
 
-The `LogonCommand` value is relative to the WindowsSandbox. This code will create a `wsbConfiguration` object.
-
-```text
 
    Name: MyDemo
 
@@ -91,60 +74,45 @@ Networking           : Default
 ProtectedClient      : Default
 LogonCommand         : c:\data\demo.cmd
 MappedFolders        : d:\data -> c:\data [RO:True]
-```
+È possibile modificare questo oggetto se necessario.
 
-You could modify this object as necessary.
+$ new .vGPU  =  " Abilita "
+ $ new .Metadata.Updated  =  Get-Date
+L'ultimo passaggio consiste nell'esportare la configurazione in un wsbfile.
 
-```powershell
-$new.vGPU = "Enable"
-$new.Metadata.Updated = Get-Date
-```
+$ nuovo  |  Export-WsbConfiguration  : percorso d: \ wsb \ demo.wsb
+Che creerà questo file:
 
-The last step is to export the configuration to a `wsb` file.
+< Configurazione >
+  < Metadati >
+    < Nome > MyDemo </ Nome >
+    < Autore > Jeff </ Autore >
+    < Description > Una configurazione WSB demo </ Description >
+    < Aggiornato > 10/09/2020 15:40:54 </ Aggiornato >
+  </ Metadati >
+  < vGPU > Abilita </ vGPU >
+  < MemoryInMB > 2048 </ MemoryInMB >
+  < AudioInput > Predefinito </ AudioInput >
+  < VideoInput > Predefinito </ VideoInput >
+  < ClipboardRedirection > Default </ ClipboardRedirection >
+  < PrinterRedirection > Disabilita </ PrinterRedirection >
+  < Networking > Default </ Networking >
+  < ProtectedClient > Predefinito </ ProtectedClient >
+  < LogonCommand >
+    < Comando > c: \ data \ demo.cmd </ Comando >
+  </ LogonCommand >
+  < MappedFolders >
+    < MappedFolder >
+      < HostFolder > d: \ data </ HostFolder >
+      < SandboxFolder > c: \ data </ SandboxFolder >
+      < ReadOnly > True </ ReadOnly >
+    </ MappedFolder >
+  </ MappedFolders >
+</ Configurazione >
+Posso avviare facilmente questa configurazione.
 
-```powershell
-$new | Export-WsbConfiguration -Path d:\wsb\demo.wsb
-```
+Start-WindowsSandbox  - Configurazione D: \ wsb \ demo.wsb
+RoadMap
+Ora che ho aggiunto più funzionalità, posso creare un singolo modulo di PowerShell per includere tutte le funzioni di gestione di Windows Sandbox. Potrei anche cercare un modo per organizzare i componenti di script utilizzati per le impostazioni di LogonCommand e una soluzione migliore per l'organizzazione dei wsbfile.
 
-Which will create this file:
-
-```xml
-<Configuration>
-  <Metadata>
-    <Name>MyDemo</Name>
-    <Author>Jeff</Author>
-    <Description>A demo WSB configuration</Description>
-    <Updated>09/10/2020 15:40:54</Updated>
-  </Metadata>
-  <vGPU>Enable</vGPU>
-  <MemoryInMB>2048</MemoryInMB>
-  <AudioInput>Default</AudioInput>
-  <VideoInput>Default</VideoInput>
-  <ClipboardRedirection>Default</ClipboardRedirection>
-  <PrinterRedirection>Disable</PrinterRedirection>
-  <Networking>Default</Networking>
-  <ProtectedClient>Default</ProtectedClient>
-  <LogonCommand>
-    <Command>c:\data\demo.cmd</Command>
-  </LogonCommand>
-  <MappedFolders>
-    <MappedFolder>
-      <HostFolder>d:\data</HostFolder>
-      <SandboxFolder>c:\data</SandboxFolder>
-      <ReadOnly>True</ReadOnly>
-    </MappedFolder>
-  </MappedFolders>
-</Configuration>
-```
-
-I can easily launch this configuration.
-
-```powershell
-Start-WindowsSandbox -Configuration D:\wsb\demo.wsb
-```
-
-## RoadMap
-
-Now that I have added more functionality, I may build a single PowerShell module to package all of the Windows Sandbox management functions. I might also look for a way to organize script components used for LogonCommand settings and a better solution for organizing `wsb` files.
-
-Last updated *10 September, 2020*.
+Ultimo aggiornamento 10 settembre 2020 .
